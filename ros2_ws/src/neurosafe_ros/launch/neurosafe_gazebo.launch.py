@@ -44,7 +44,7 @@ def generate_launch_description():
                     {
                         "predictions_csv": predictions_csv,
                         "held_out_subject": held_out_subject,
-                        "period_seconds": 2.0,
+                        "period_seconds": 0.4,
                     }
                 ],
                 output="screen",

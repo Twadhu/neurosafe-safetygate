@@ -11,6 +11,7 @@ import numpy as np
 from .metrics import expected_calibration_error
 from .models import Command, Prediction, RobotContext
 from .safety_gate import SafetyGate, SafetyGateConfig
+from .selective import select_confidence_threshold
 
 MOTOR_IMAGERY_RUNS = (4, 8, 12)
 
@@ -28,6 +29,7 @@ class EEGResult:
 @dataclass(frozen=True)
 class ParticipantResult:
     held_out_subject: int
+    validation_subject: int
     train_subjects: int
     train_trials: int
     test_trials: int
@@ -38,6 +40,8 @@ class ParticipantResult:
     coverage: float
     selective_accuracy: float
     safe_stop_rate: float
+    selected_restrict_threshold: float
+    selected_execute_threshold: float
 
 
 @dataclass(frozen=True)
@@ -56,6 +60,8 @@ class CrossSubjectResult:
     coverage: float
     selective_accuracy: float
     safe_stop_rate: float
+    restrict_threshold_mean: float
+    restrict_threshold_std: float
     participant_results_csv: str
     predictions_csv: str
     summary_json: str
@@ -264,7 +270,7 @@ def run_cross_subject_evaluation(
     participants_path = output / "participant_results.csv"
     summary_path = output / "summary.json"
     model_path = output / "logvar_logreg_all_subjects.joblib"
-    gate = SafetyGate(config)
+    base_config = config or SafetyGateConfig()
 
     all_truth: list[int] = []
     all_predictions: list[int] = []
@@ -276,6 +282,34 @@ def run_cross_subject_evaluation(
     prediction_rows: list[dict[str, object]] = []
 
     for train, test, held_out in participant_splits(groups):
+        ordered_subjects = list(subject_tuple)
+        held_out_position = ordered_subjects.index(held_out)
+        validation_subject = ordered_subjects[(held_out_position + 1) % len(ordered_subjects)]
+        tuning_train = train[groups[train] != validation_subject]
+        validation = train[groups[train] == validation_subject]
+        tuning_pipeline = _new_cross_subject_pipeline(deps)
+        tuning_pipeline.fit(x[tuning_train], y[tuning_train])
+        validation_predictions = tuning_pipeline.predict(x[validation]).astype(int)
+        validation_probabilities = tuning_pipeline.predict_proba(x[validation])
+        validation_confidence = validation_probabilities.max(axis=1).tolist()
+        validation_correctness = (validation_predictions == y[validation]).tolist()
+        threshold_selection = select_confidence_threshold(
+            validation_confidence,
+            validation_correctness,
+        )
+        restrict_threshold = threshold_selection.threshold
+        execute_threshold = min(0.95, max(0.80, restrict_threshold + 0.15))
+        gate = SafetyGate(
+            SafetyGateConfig(
+                execute_threshold=execute_threshold,
+                restrict_threshold=restrict_threshold,
+                maximum_entropy=base_config.maximum_entropy,
+                command_timeout_ms=base_config.command_timeout_ms,
+                minimum_obstacle_distance_m=base_config.minimum_obstacle_distance_m,
+                restricted_speed_scale=base_config.restricted_speed_scale,
+                normal_speed_mps=base_config.normal_speed_mps,
+            )
+        )
         pipeline = _new_cross_subject_pipeline(deps)
         pipeline.fit(x[train], y[train])
         predicted = pipeline.predict(x[test]).astype(int)
@@ -330,6 +364,7 @@ def run_cross_subject_evaluation(
         participant_rows.append(
             ParticipantResult(
                 held_out_subject=held_out,
+                validation_subject=validation_subject,
                 train_subjects=len(subject_tuple) - 1,
                 train_trials=len(train),
                 test_trials=len(test),
@@ -340,6 +375,8 @@ def run_cross_subject_evaluation(
                 coverage=coverage,
                 selective_accuracy=selective_accuracy,
                 safe_stop_rate=1.0 - coverage,
+                selected_restrict_threshold=restrict_threshold,
+                selected_execute_threshold=execute_threshold,
             )
         )
         all_truth.extend(int(value) for value in truth)
@@ -368,6 +405,7 @@ def run_cross_subject_evaluation(
     )
 
     balanced_scores = np.array([row.balanced_accuracy for row in participant_rows])
+    selected_thresholds = np.array([row.selected_restrict_threshold for row in participant_rows])
     accepted = [row["output_command"] != "STOP" for row in prediction_rows]
     result = CrossSubjectResult(
         dataset="PhysioNet EEG Motor Movement/Imagery Database v1.0.0",
@@ -386,6 +424,8 @@ def run_cross_subject_evaluation(
             float(np.mean(all_accepted_correctness)) if all_accepted_correctness else 0.0
         ),
         safe_stop_rate=1.0 - float(np.mean(accepted)),
+        restrict_threshold_mean=float(selected_thresholds.mean()),
+        restrict_threshold_std=float(selected_thresholds.std(ddof=1)),
         participant_results_csv=str(participants_path),
         predictions_csv=str(predictions_path),
         summary_json=str(summary_path),
@@ -402,6 +442,72 @@ def _write_rows(path: Path, rows: list[dict[str, object]]) -> None:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
         writer.writeheader()
         writer.writerows(rows)
+
+
+def run_model_benchmark(
+    subjects: Iterable[int],
+    data_dir: str | Path = ".cache/mne",
+    output_dir: str | Path = "artifacts/physionet_benchmark",
+) -> dict[str, object]:
+    """Compare declared baselines under identical participant splits."""
+    deps = _dependencies()
+    subject_tuple = tuple(sorted({int(subject) for subject in subjects}))
+    if len(subject_tuple) < 3:
+        raise ValueError("The benchmark requires at least three participants")
+    x, y, groups = load_physionet_epochs(subject_tuple, data_dir)
+    factories = {
+        "logvar_logistic_regression": lambda: _new_cross_subject_pipeline(deps),
+        "csp_shrinkage_lda": lambda: _new_csp_pipeline(deps),
+    }
+    participant_rows: list[dict[str, object]] = []
+    summary_rows: list[dict[str, object]] = []
+    for model_name, factory in factories.items():
+        scores: list[float] = []
+        accuracies: list[float] = []
+        for train, test, held_out in participant_splits(groups):
+            pipeline = factory()
+            pipeline.fit(x[train], y[train])
+            predicted = pipeline.predict(x[test]).astype(int)
+            balanced = float(deps["balanced_accuracy_score"](y[test], predicted))
+            accuracy = float(np.mean(predicted == y[test]))
+            scores.append(balanced)
+            accuracies.append(accuracy)
+            participant_rows.append(
+                {
+                    "model": model_name,
+                    "held_out_subject": held_out,
+                    "train_trials": len(train),
+                    "test_trials": len(test),
+                    "balanced_accuracy": balanced,
+                    "accuracy": accuracy,
+                }
+            )
+        summary_rows.append(
+            {
+                "model": model_name,
+                "participants": len(subject_tuple),
+                "trials": len(y),
+                "balanced_accuracy_mean": float(np.mean(scores)),
+                "balanced_accuracy_std": float(np.std(scores, ddof=1)),
+                "accuracy_mean": float(np.mean(accuracies)),
+            }
+        )
+
+    output = Path(output_dir)
+    output.mkdir(parents=True, exist_ok=True)
+    participant_path = output / "participant_model_results.csv"
+    summary_path = output / "model_summary.json"
+    _write_rows(participant_path, participant_rows)
+    payload: dict[str, object] = {
+        "dataset": "PhysioNet EEG Motor Movement/Imagery Database v1.0.0",
+        "subjects": subject_tuple,
+        "runs": MOTOR_IMAGERY_RUNS,
+        "evaluation": "Identical leave-one-participant-out folds",
+        "models": summary_rows,
+        "participant_results_csv": str(participant_path),
+    }
+    summary_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return payload
 
 
 def train_subject_model(subject: int, output_model: str | Path) -> EEGResult:

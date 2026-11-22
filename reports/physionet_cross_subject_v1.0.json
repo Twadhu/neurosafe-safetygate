@@ -1,0 +1,19 @@
+{
+  "dataset": "PhysioNet EEG Motor Movement/Imagery Database v1.0.0",
+  "subjects": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+  "runs": [4, 8, 12],
+  "total_trials": 450,
+  "evaluation": "Leave-one-participant-out; threshold selected on a separate validation participant",
+  "model": "7-30 Hz log-variance + standardized logistic regression",
+  "balanced_accuracy_mean": 0.5255352437417654,
+  "balanced_accuracy_std": 0.0764859879344278,
+  "accuracy": 0.52,
+  "expected_calibration_error": 0.05030217718566151,
+  "brier_score": 0.2551830595579908,
+  "coverage": 0.06888888888888889,
+  "selective_accuracy": 0.4838709677419355,
+  "safe_stop_rate": 0.9311111111111111,
+  "restrict_threshold_mean": 0.695,
+  "restrict_threshold_std": 0.083166499665831,
+  "scientific_boundary": "10-participant pilot; open-loop replay; not a medical device"
+}

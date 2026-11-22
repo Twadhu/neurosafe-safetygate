@@ -1,0 +1,24 @@
+{
+  "dataset": "PhysioNet EEG Motor Movement/Imagery Database v1.0.0",
+  "subjects": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+  "runs": [4, 8, 12],
+  "evaluation": "Identical leave-one-participant-out folds",
+  "models": [
+    {
+      "model": "logvar_logistic_regression",
+      "participants": 10,
+      "trials": 450,
+      "balanced_accuracy_mean": 0.5255352437417654,
+      "balanced_accuracy_std": 0.0764859879344278,
+      "accuracy_mean": 0.52
+    },
+    {
+      "model": "csp_shrinkage_lda",
+      "participants": 10,
+      "trials": 450,
+      "balanced_accuracy_mean": 0.5187770562770562,
+      "balanced_accuracy_std": 0.050574844324734636,
+      "accuracy_mean": 0.5222222222222223
+    }
+  ]
+}

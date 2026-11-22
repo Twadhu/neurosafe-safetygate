@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from dataclasses import asdict
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -41,11 +43,17 @@ with st.sidebar:
     trials = st.slider("Simulation trials", 100, 5000, 1000, 100)
     seed = int(st.number_input("Random seed", value=42, step=1))
     st.divider()
-    st.caption("Version 0.2 research prototype")
+    st.caption("Version 1.0 research platform")
 
 data, metrics = experiment_data(execute, restrict, obstacle, trials, seed)
-overview, tradeoffs, robot, log = st.tabs(
-    ["Safety overview", "Threshold trade-offs", "Robot demo", "Trial audit log"]
+overview, eeg, tradeoffs, robot, log = st.tabs(
+    [
+        "Safety overview",
+        "Real EEG",
+        "Threshold trade-offs",
+        "Robot demo",
+        "Trial audit log",
+    ]
 )
 
 with overview:
@@ -77,6 +85,32 @@ with overview:
             index=["Direct control", "SafetyGate"],
         )
         st.bar_chart(risk)
+
+with eeg:
+    st.subheader("Participant-disjoint PhysioNet EEG pilot")
+    summary_path = Path("reports/physionet_cross_subject_v1.0.json")
+    participants_path = Path("reports/physionet_participants_v1.0.csv")
+    if summary_path.exists() and participants_path.exists():
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        participants = pd.read_csv(participants_path)
+        metrics_row = st.columns(4)
+        metrics_row[0].metric("Balanced accuracy", f"{summary['balanced_accuracy_mean']:.1%}")
+        metrics_row[1].metric("Coverage", f"{summary['coverage']:.1%}")
+        metrics_row[2].metric("Selective accuracy", f"{summary['selective_accuracy']:.1%}")
+        metrics_row[3].metric("Safe-stop rate", f"{summary['safe_stop_rate']:.1%}")
+        st.bar_chart(
+            participants.set_index("held_out_subject")[["balanced_accuracy"]],
+            x_label="Held-out participant",
+            y_label="Balanced accuracy",
+        )
+        st.dataframe(participants, use_container_width=True, hide_index=True)
+        st.caption(
+            "Every participant is tested only after all learned steps are fitted on other "
+            "participants. Confidence thresholds are selected on a separate validation "
+            "participant inside each outer fold."
+        )
+    else:
+        st.info("Run `neurosafe evaluate-eeg --subjects 1-10` to create the real EEG report.")
 
 with tradeoffs:
     st.subheader("Risk-coverage threshold study")

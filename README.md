@@ -8,7 +8,7 @@ This repository is the first working stage of Abdullah Abbas's longer NeuroSafe 
 plan. The current goal is a reproducible simulation and public-EEG research prototype. The
 future goal is safe and adaptive shared control for assistive robots.
 
-## What works in version 0.3
+## What works in version 1.0
 
 - Configurable SafetyGate decision engine.
 - Checks for confidence, uncertainty, obstacles, stale messages, invalid probabilities,
@@ -23,6 +23,11 @@ future goal is safe and adaptive shared control for assistive robots.
 - PhysioNet left/right motor-imagery evaluation with participant-disjoint folds.
 - Real EEG prediction replay through a ROS 2 SafetyGate node.
 - Gazebo Harmonic differential-drive robot, lidar, obstacles, and ROS bridge.
+- Validation-participant threshold selection without test-participant tuning.
+- Direct comparison of log-variance logistic regression and CSP-LDA.
+- Fail-closed lidar handling and a stale-prediction watchdog.
+- Shared control combining EEG steering with autonomous safe forward motion.
+- Real EEG metrics and participant tables in the dashboard.
 
 ## Quick start
 
@@ -82,12 +87,18 @@ parameters are never fitted on a held-out participant.
 ```bash
 pip install -e ".[eeg]"
 neurosafe evaluate-eeg --subjects 1-10
+neurosafe benchmark-eeg --subjects 1-10
 ```
 
 The executed 10-participant baseline contains 450 real EEG trials. Mean balanced accuracy is
-52.55% with a 7.65 percentage-point standard deviation across held-out participants. The default
-SafetyGate accepts or restricts 12.89% of commands and stops 87.11%. This low coverage is an
-important honest result: the simple model is not reliable enough for autonomous robot control.
+52.55% with a 7.65 percentage-point standard deviation across held-out participants. In version
+1.0, each outer test participant has a separate validation participant for threshold selection.
+The selected thresholds accept or restrict 6.89% of test commands and stop 93.11%. Selective
+accuracy remains only 48.39%, showing that confidence itself does not transfer reliably between
+participants. This is an important negative result and a direct target for the next research model.
+
+The comparison baseline produced 52.55% mean balanced accuracy for log-variance logistic
+regression and 51.88% for CSP plus shrinkage LDA on identical participant folds.
 
 ## ROS 2 and Gazebo
 

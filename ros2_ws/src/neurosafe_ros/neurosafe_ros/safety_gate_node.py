@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import time
 from math import isfinite
 
 import rclpy
@@ -11,7 +12,7 @@ from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Bool, String
 
 from neurosafe.models import Command, Prediction, RobotContext
-from neurosafe.ros_adapter import command_to_velocity
+from neurosafe.ros_adapter import shared_control_velocity
 from neurosafe.safety_gate import SafetyGate, SafetyGateConfig
 
 
@@ -30,11 +31,14 @@ class SafetyGateNode(Node):
         self.gate = SafetyGate(config)
         self.closest_obstacle: float | None = None
         self.emergency_stop = False
+        self.last_prediction_monotonic: float | None = None
+        self.watchdog_stopped = False
         self.velocity_publisher = self.create_publisher(Twist, "/cmd_vel", 10)
         self.status_publisher = self.create_publisher(String, "/neurosafe/status", 10)
         self.create_subscription(String, "/neurosafe/eeg_prediction", self.on_prediction, 10)
         self.create_subscription(LaserScan, "/scan", self.on_scan, qos_profile_sensor_data)
         self.create_subscription(Bool, "/neurosafe/emergency_stop", self.on_emergency, 10)
+        self.create_timer(0.1, self.watchdog)
 
     def on_scan(self, message: LaserScan) -> None:
         valid = [distance for distance in message.ranges if isfinite(distance) and distance > 0]
@@ -43,7 +47,7 @@ class SafetyGateNode(Node):
     def on_emergency(self, message: Bool) -> None:
         self.emergency_stop = bool(message.data)
         if self.emergency_stop:
-            self.publish_stop()
+            self.publish_stop("emergency_stop_active")
 
     def on_prediction(self, message: String) -> None:
         try:
@@ -58,7 +62,13 @@ class SafetyGateNode(Node):
             )
         except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
             self.get_logger().error(f"Rejected malformed prediction: {exc}")
-            self.publish_stop()
+            self.publish_stop("malformed_prediction")
+            return
+
+        self.last_prediction_monotonic = time.monotonic()
+        self.watchdog_stopped = False
+        if self.closest_obstacle is None:
+            self.publish_stop("lidar_unavailable")
             return
 
         result = self.gate.evaluate(
@@ -68,10 +78,12 @@ class SafetyGateNode(Node):
                 emergency_stop=self.emergency_stop,
             ),
         )
-        velocity = command_to_velocity(
+        velocity = shared_control_velocity(
             result.output_command,
             result.speed_scale,
+            self.closest_obstacle,
             normal_speed_mps=self.gate.config.normal_speed_mps,
+            minimum_obstacle_distance_m=self.gate.config.minimum_obstacle_distance_m,
         )
         twist = Twist()
         twist.linear.x = velocity.linear_x
@@ -92,8 +104,33 @@ class SafetyGateNode(Node):
         )
         self.status_publisher.publish(status)
 
-    def publish_stop(self) -> None:
+    def watchdog(self) -> None:
+        if self.last_prediction_monotonic is None:
+            if not self.watchdog_stopped:
+                self.publish_stop("waiting_for_prediction")
+                self.watchdog_stopped = True
+            return
+        timeout_seconds = self.gate.config.command_timeout_ms / 1000
+        if (
+            time.monotonic() - self.last_prediction_monotonic > timeout_seconds
+            and not self.watchdog_stopped
+        ):
+            self.publish_stop("prediction_watchdog_timeout")
+            self.watchdog_stopped = True
+
+    def publish_stop(self, reason: str = "safe_stop") -> None:
         self.velocity_publisher.publish(Twist())
+        status = String()
+        status.data = json.dumps(
+            {
+                "requested_command": "UNKNOWN",
+                "output_command": "STOP",
+                "decision": "SAFE_STOP",
+                "closest_obstacle_m": self.closest_obstacle,
+                "reasons": [reason],
+            }
+        )
+        self.status_publisher.publish(status)
 
 
 def main(args=None) -> None:
@@ -104,6 +141,6 @@ def main(args=None) -> None:
     except KeyboardInterrupt:
         pass
     finally:
-        node.publish_stop()
+        node.publish_stop("node_shutdown")
         node.destroy_node()
         rclpy.shutdown()

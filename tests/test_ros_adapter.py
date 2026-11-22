@@ -3,7 +3,7 @@ import csv
 import pytest
 
 from neurosafe.models import Command
-from neurosafe.ros_adapter import command_to_velocity, load_replay_rows
+from neurosafe.ros_adapter import command_to_velocity, load_replay_rows, shared_control_velocity
 
 
 @pytest.mark.parametrize(
@@ -45,3 +45,16 @@ def test_replay_rows_rejects_empty_selection(tmp_path):
     path.write_text("held_out_subject,prediction\n1,LEFT\n", encoding="utf-8")
     with pytest.raises(ValueError):
         load_replay_rows(path, 9)
+
+
+def test_shared_control_combines_steering_and_safe_forward_motion():
+    velocity = shared_control_velocity(Command.LEFT, 1.0, obstacle_distance_m=2.0)
+    assert velocity.linear_x == pytest.approx(0.225)
+    assert velocity.angular_z == pytest.approx(1.2)
+
+
+@pytest.mark.parametrize("distance", [None, 0.2])
+def test_shared_control_fails_closed_without_clear_lidar(distance):
+    assert shared_control_velocity(Command.RIGHT, 1.0, distance) == command_to_velocity(
+        Command.STOP, 0.0
+    )

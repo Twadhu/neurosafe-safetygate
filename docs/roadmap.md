@@ -25,6 +25,18 @@
 - Added lidar obstacle overrides and a reproducible real-prediction replay node.
 - Next: execute acceptance tests on an Ubuntu 24.04 ROS 2 Jazzy workstation.
 
+## Version 1.0 software-completion status
+
+- Implemented two participant-disjoint EEG baselines on identical folds.
+- Implemented validation-only confidence-threshold selection.
+- Implemented shared control, lidar fail-closed behavior, and a prediction watchdog.
+- Implemented a real-EEG dashboard and machine-readable reports.
+- Published explicit acceptance criteria and reproducibility configuration.
+
+Version 1.0 is the completed research-software prototype. It is not the end of the scientific
+project. The next meaningful research upgrade is a stronger representation-learning or domain-
+generalization model evaluated on a larger participant cohort, followed by live closed-loop EEG.
+
 ## Milestone 4: Research evaluation
 
 - Compare direct execution with SafetyGate under identical trials.

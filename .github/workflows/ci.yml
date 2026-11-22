@@ -16,4 +16,7 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: ruff check .
       - run: pytest --cov=neurosafe --cov-report=term-missing --cov-fail-under=85
+      - run: python -m compileall -q src app ros2_ws/src/neurosafe_ros
+      - run: python -c "import xml.etree.ElementTree as ET; ET.parse('ros2_ws/src/neurosafe_ros/package.xml'); ET.parse('ros2_ws/src/neurosafe_ros/worlds/neurosafe_world.sdf')"
+      - run: pip install build && python -m build
 

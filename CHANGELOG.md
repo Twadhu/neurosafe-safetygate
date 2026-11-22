@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.0
+
+- Added nested participant isolation for confidence-threshold selection.
+- Added a reproducible comparison of log-variance logistic regression and CSP-LDA.
+- Added a real-EEG results view to the Streamlit dashboard.
+- Added shared control that blends EEG steering with lidar-gated forward motion.
+- Added a fail-closed lidar rule and prediction-stream watchdog to the ROS node.
+- Added an auditable experiment manifest and formal acceptance-test document.
+- Expanded the automated suite to 36 tests while retaining the coverage gate.
+- Promoted the project to a complete research-software prototype.
+
 ## 0.3.0
 
 - Corrected left/right motor-imagery runs from 6, 10, 14 to 4, 8, 12.

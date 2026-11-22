@@ -1,0 +1,15 @@
+{
+  "dataset": "PhysioNet EEG Motor Movement/Imagery Database v1.0.0",
+  "subjects": "1-10",
+  "runs": [4, 8, 12],
+  "task": "imagined left fist versus imagined right fist",
+  "filter_hz": [7.0, 30.0],
+  "epoch_seconds": [1.0, 4.0],
+  "primary_model": "log-variance + StandardScaler + balanced logistic regression",
+  "comparison_model": "CSP + shrinkage LDA",
+  "outer_evaluation": "leave-one-participant-out",
+  "threshold_validation": "next participant in cyclic order, excluded from threshold model fit",
+  "wrong_accept_cost": 4.0,
+  "correct_reject_cost": 1.0,
+  "random_seed": 42
+}

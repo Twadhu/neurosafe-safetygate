@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>neurosafe_ros</name>
-  <version>0.3.0</version>
+  <version>1.0.0</version>
   <description>ROS 2 and Gazebo integration for NeuroSafe SafetyGate.</description>
   <maintainer email="b26dcdk900@stu.ptit.edu.vn">Abdullah Faisal Abdo Othman Abbas</maintainer>
   <license>MIT</license>

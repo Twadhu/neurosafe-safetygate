@@ -4,7 +4,11 @@ import argparse
 import json
 from pathlib import Path
 
-from .eeg_pipeline import run_cross_subject_evaluation, train_subject_model
+from .eeg_pipeline import (
+    run_cross_subject_evaluation,
+    run_model_benchmark,
+    train_subject_model,
+)
 from .robot_simulator import run_robot_demo
 from .safety_gate import SafetyGate, SafetyGateConfig
 from .simulation import run_experiment, run_threshold_sweep
@@ -12,6 +16,17 @@ from .simulation import run_experiment, run_threshold_sweep
 
 def _config(path: str) -> SafetyGateConfig:
     return SafetyGateConfig.from_json(path)
+
+
+def _parse_subjects(value: str) -> set[int]:
+    subjects: set[int] = set()
+    for item in value.split(","):
+        if "-" in item:
+            start, end = (int(number) for number in item.split("-", 1))
+            subjects.update(range(start, end + 1))
+        else:
+            subjects.add(int(item))
+    return subjects
 
 
 def main() -> None:
@@ -49,6 +64,14 @@ def main() -> None:
     cross_subject.add_argument("--data-dir", default=".cache/mne")
     cross_subject.add_argument("--output-dir", default="artifacts/physionet_cross_subject")
 
+    benchmark = subparsers.add_parser(
+        "benchmark-eeg",
+        help="Compare EEG baselines on participant-disjoint folds",
+    )
+    benchmark.add_argument("--subjects", default="1-10")
+    benchmark.add_argument("--data-dir", default=".cache/mne")
+    benchmark.add_argument("--output-dir", default="artifacts/physionet_benchmark")
+
     args = parser.parse_args()
     if args.command == "simulate":
         gate = SafetyGate(_config(args.config))
@@ -74,13 +97,7 @@ def main() -> None:
         result = train_subject_model(args.subject, args.output)
         print(json.dumps(result.__dict__, indent=2))
     elif args.command == "evaluate-eeg":
-        subjects: set[int] = set()
-        for item in args.subjects.split(","):
-            if "-" in item:
-                start, end = (int(value) for value in item.split("-", 1))
-                subjects.update(range(start, end + 1))
-            else:
-                subjects.add(int(item))
+        subjects = _parse_subjects(args.subjects)
         result = run_cross_subject_evaluation(
             subjects,
             data_dir=args.data_dir,
@@ -88,6 +105,13 @@ def main() -> None:
             config=_config("config/default.json"),
         )
         print(json.dumps(result.__dict__, indent=2))
+    elif args.command == "benchmark-eeg":
+        result = run_model_benchmark(
+            _parse_subjects(args.subjects),
+            data_dir=args.data_dir,
+            output_dir=args.output_dir,
+        )
+        print(json.dumps(result, indent=2))
 
 
 if __name__ == "__main__":

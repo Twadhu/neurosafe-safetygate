@@ -6,6 +6,11 @@ the simulated environment. The replay evaluates the downstream safety and
 control path using authentic model outputs, while Gazebo supplies the current
 robot context through lidar.
 
+Version 1.0 fails closed when lidar is unavailable and publishes zero velocity
+when the EEG prediction stream exceeds its timeout. LEFT and RIGHT are treated
+as steering intent; cautious forward motion is supplied by shared control only
+while lidar reports sufficient clearance.
+
 ## Supported stack
 
 - Ubuntu 24.04

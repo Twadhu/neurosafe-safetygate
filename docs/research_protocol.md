@@ -44,7 +44,10 @@ Run the same predictions and obstacle conditions under:
 - Outer evaluation: leave one participant out.
 - Leakage rule: all learned transformations and classifier parameters are fitted only on the
   nine training participants in each fold.
-- Safety analysis: feed held-out probabilities to the unchanged default SafetyGate.
+- Safety analysis: feed held-out probabilities to a SafetyGate configured only from training-side
+  validation data.
+- Threshold analysis: select the rejection threshold on a separate validation participant using
+  a declared four-to-one cost ratio for wrong acceptance versus correct rejection.
 - Gazebo analysis: replay authentic held-out probabilities while using live simulated lidar.
 
 ## Safety and ethics
