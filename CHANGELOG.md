@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0
+
+- Corrected left/right motor-imagery runs from 6, 10, 14 to 4, 8, 12.
+- Downloaded and evaluated 450 real PhysioNet trials from 10 participants.
+- Added leave-one-participant-out evaluation with explicit identity isolation.
+- Added participant-level accuracy, calibration, coverage, and safe-stop reports.
+- Added real-EEG prediction replay for ROS 2.
+- Added a live lidar-aware SafetyGate ROS node publishing safe velocity commands.
+- Added a Gazebo Harmonic differential-drive world with lidar and obstacles.
+- Added ROS-independent command mapping tests and expanded the suite to 27 tests.
+
 ## 0.2.0
 
 - Added reproducible scenario generation separated from evaluation.

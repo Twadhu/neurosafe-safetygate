@@ -8,7 +8,7 @@ This repository is the first working stage of Abdullah Abbas's longer NeuroSafe 
 plan. The current goal is a reproducible simulation and public-EEG research prototype. The
 future goal is safe and adaptive shared control for assistive robots.
 
-## What works in version 0.2
+## What works in version 0.3
 
 - Configurable SafetyGate decision engine.
 - Checks for confidence, uncertainty, obstacles, stale messages, invalid probabilities,
@@ -20,7 +20,9 @@ future goal is safe and adaptive shared control for assistive robots.
 - CSV trial logs, CSV threshold studies, and JSON summaries.
 - Automated unit tests.
 - Optional Streamlit monitoring dashboard.
-- Optional PhysioNet motor-imagery EEG baseline using CSP + LDA.
+- PhysioNet left/right motor-imagery evaluation with participant-disjoint folds.
+- Real EEG prediction replay through a ROS 2 SafetyGate node.
+- Gazebo Harmonic differential-drive robot, lidar, obstacles, and ROS bridge.
 
 ## Quick start
 
@@ -46,7 +48,7 @@ pytest -q
 
 The simulation writes trial-level results to `artifacts/simulation_trials.csv`.
 
-## Reproducible version 0.2 baseline
+## Reproducible synthetic version 0.2 baseline
 
 Using 2,000 seeded synthetic scenarios with the default thresholds:
 
@@ -70,17 +72,29 @@ pip install -e ".[dashboard]"
 streamlit run app/dashboard.py
 ```
 
-## Public EEG baseline
+## Real PhysioNet EEG baseline
 
-The first EEG experiment downloads public PhysioNet EEG Motor Movement/Imagery data. It uses
-imagined left and right fist runs and trains a subject-specific CSP + LDA baseline.
+Version 0.3 downloads public PhysioNet EEG Motor Movement/Imagery runs 4, 8, and 12. These are
+the correct imagined left-versus-right fist runs. It evaluates a 7-30 Hz log-variance plus
+logistic-regression baseline with leave-one-participant-out folds. CSP, scaling, or classifier
+parameters are never fitted on a held-out participant.
 
 ```bash
 pip install -e ".[eeg]"
-neurosafe train-eeg --subject 1
+neurosafe evaluate-eeg --subjects 1-10
 ```
 
-The first run downloads data. Do not claim cross-subject generalization from this baseline.
+The executed 10-participant baseline contains 450 real EEG trials. Mean balanced accuracy is
+52.55% with a 7.65 percentage-point standard deviation across held-out participants. The default
+SafetyGate accepts or restricts 12.89% of commands and stops 87.11%. This low coverage is an
+important honest result: the simple model is not reliable enough for autonomous robot control.
+
+## ROS 2 and Gazebo
+
+The ROS package in `ros2_ws/src/neurosafe_ros` replays real held-out predictions, re-evaluates
+them through SafetyGate using live lidar context, and publishes safe `geometry_msgs/Twist`
+commands. See [docs/ros2_gazebo.md](docs/ros2_gazebo.md) for Ubuntu 24.04, ROS 2 Jazzy, and
+Gazebo Harmonic instructions.
 
 ## Repository map
 
@@ -102,7 +116,8 @@ risk assessment, institutional approval, and supervised testing.
 
 ## Current scientific boundary
 
-The committed EEG module is ready to download public PhysioNet data and run a calibrated,
-subject-specific CSP + LDA baseline. It has not yet produced a committed EEG result. Cross-subject
-generalization and Gazebo integration remain future milestones.
+The committed real-EEG result is a 10-participant pilot, not a final estimate across all 109
+participants. The Gazebo integration is an open-loop replay: PhysioNet EEG was recorded in a
+different task context and is not synchronized to the simulated world. It validates the software
+and safety-control path, not a closed-loop BCI or medical device.
 

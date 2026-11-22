@@ -11,17 +11,19 @@
 
 ## Milestone 2: Public EEG baseline
 
-- Install EEG dependencies.
-- Download PhysioNet EEG Motor Movement/Imagery runs 6, 10, and 14.
-- Train and evaluate CSP + LDA for imagined left versus right fist.
-- Run and archive the calibrated CSP + LDA baseline on public data.
-- Add subject-disjoint evaluation after the single-subject baseline is verified.
+- Status: 10-participant pilot implemented in version 0.3.
+- Downloaded correct left/right imagery runs 4, 8, and 12.
+- Evaluated 450 trials with leave-one-participant-out isolation.
+- Archived participant-level and aggregate results.
+- Next: scale to all valid participants and compare stronger transfer-learning baselines.
 
 ## Milestone 3: Robot simulation
 
-- Define ROS2 messages for prediction, safety state, and velocity command.
-- Connect SafetyGate to a differential-drive robot in Gazebo.
-- Create obstacle, stale-command, and communication-failure scenarios.
+- Status: integration code implemented in version 0.3.
+- Added EEG prediction, safety status, emergency-stop, lidar, and velocity topics.
+- Connected SafetyGate to a differential-drive Gazebo robot.
+- Added lidar obstacle overrides and a reproducible real-prediction replay node.
+- Next: execute acceptance tests on an Ubuntu 24.04 ROS 2 Jazzy workstation.
 
 ## Milestone 4: Research evaluation
 

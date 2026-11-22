@@ -15,6 +15,10 @@ venv/
 .vscode/settings.json
 data/raw/
 data/processed/
+.cache/
+ros2_ws/build/
+ros2_ws/install/
+ros2_ws/log/
 artifacts/*
 !artifacts/.gitkeep
 

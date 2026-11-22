@@ -33,6 +33,20 @@ Run the same predictions and obstacle conditions under:
 - Evaluate threshold candidates on identical scenarios and seeds.
 - Select thresholds using validation data and report final results on untouched test data.
 
+## Version 0.3 participant-disjoint EEG protocol
+
+- Dataset: PhysioNet EEG Motor Movement/Imagery Database v1.0.0.
+- Task: imagined left versus right fist, runs 4, 8, and 12.
+- Pilot cohort: participants 1 through 10, 45 trials per participant.
+- Preprocessing: 7-30 Hz filtering and epochs from 1 to 4 seconds after task onset.
+- Features: channel-wise log variance.
+- Classifier: standardized logistic regression with balanced class weights.
+- Outer evaluation: leave one participant out.
+- Leakage rule: all learned transformations and classifier parameters are fitted only on the
+  nine training participants in each fold.
+- Safety analysis: feed held-out probabilities to the unchanged default SafetyGate.
+- Gazebo analysis: replay authentic held-out probabilities while using live simulated lidar.
+
 ## Safety and ethics
 
 The project is an educational prototype, not a medical device. It uses public data during

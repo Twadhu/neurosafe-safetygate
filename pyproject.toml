@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neurosafe-safetygate"
-version = "0.2.0"
+version = "0.3.0"
 description = "A confidence-aware safety layer for EEG-controlled assistive robots."
 readme = "README.md"
 requires-python = ">=3.10"

@@ -4,7 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
-from .eeg_pipeline import train_subject_model
+from .eeg_pipeline import run_cross_subject_evaluation, train_subject_model
 from .robot_simulator import run_robot_demo
 from .safety_gate import SafetyGate, SafetyGateConfig
 from .simulation import run_experiment, run_threshold_sweep
@@ -37,6 +37,18 @@ def main() -> None:
     eeg.add_argument("--subject", type=int, default=1)
     eeg.add_argument("--output", default="artifacts/eeg_subject_001.joblib")
 
+    cross_subject = subparsers.add_parser(
+        "evaluate-eeg",
+        help="Run participant-disjoint PhysioNet motor-imagery evaluation",
+    )
+    cross_subject.add_argument(
+        "--subjects",
+        default="1-10",
+        help="Comma-separated IDs and ranges, for example 1-10,12,14",
+    )
+    cross_subject.add_argument("--data-dir", default=".cache/mne")
+    cross_subject.add_argument("--output-dir", default="artifacts/physionet_cross_subject")
+
     args = parser.parse_args()
     if args.command == "simulate":
         gate = SafetyGate(_config(args.config))
@@ -60,6 +72,21 @@ def main() -> None:
         print(f"Robot path: {Path(args.output).resolve()}")
     elif args.command == "train-eeg":
         result = train_subject_model(args.subject, args.output)
+        print(json.dumps(result.__dict__, indent=2))
+    elif args.command == "evaluate-eeg":
+        subjects: set[int] = set()
+        for item in args.subjects.split(","):
+            if "-" in item:
+                start, end = (int(value) for value in item.split("-", 1))
+                subjects.update(range(start, end + 1))
+            else:
+                subjects.add(int(item))
+        result = run_cross_subject_evaluation(
+            subjects,
+            data_dir=args.data_dir,
+            output_dir=args.output_dir,
+            config=_config("config/default.json"),
+        )
         print(json.dumps(result.__dict__, indent=2))
 
 
