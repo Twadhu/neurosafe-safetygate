@@ -1,0 +1,10 @@
+{
+  "execute_threshold": 0.80,
+  "restrict_threshold": 0.60,
+  "maximum_entropy": 0.95,
+  "command_timeout_ms": 500,
+  "minimum_obstacle_distance_m": 0.35,
+  "restricted_speed_scale": 0.35,
+  "normal_speed_mps": 0.50
+}
+
