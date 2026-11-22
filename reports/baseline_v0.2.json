@@ -1,0 +1,18 @@
+{
+  "coverage": 0.8365,
+  "data_source": "synthetic",
+  "direct_unsafe_rate": 0.316,
+  "direct_weighted_risk": 776.0,
+  "expected_calibration_error": 0.13405004997999997,
+  "false_rejection_rate": 0.05263157894736842,
+  "gated_unsafe_rate": 0.1525,
+  "gated_weighted_risk": 158.75,
+  "multiclass_brier_score": 0.3496563463734475,
+  "prediction_accuracy": 0.722,
+  "restrict_rate": 0.33,
+  "safe_stop_rate": 0.1635,
+  "seed": 42,
+  "selective_accuracy": 0.8176927674835625,
+  "trials": 2000.0,
+  "unsafe_reduction_rate": 0.5174050632911392
+}

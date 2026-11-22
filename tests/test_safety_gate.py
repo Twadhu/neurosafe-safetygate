@@ -46,6 +46,12 @@ def test_emergency_stop_overrides_everything():
     assert "emergency_stop_active" in result.reasons
 
 
+def test_communication_failure_stops():
+    result = SafetyGate().evaluate(prediction(), RobotContext(communication_ok=False))
+    assert result.decision == Decision.SAFE_STOP
+    assert "communication_failure" in result.reasons
+
+
 def test_stale_command_stops():
     old = time() - 2
     result = SafetyGate().evaluate(prediction(created_at=old), RobotContext())

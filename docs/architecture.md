@@ -13,7 +13,9 @@ flowchart LR
 ```
 
 The prediction model never controls the robot directly. The SafetyGate receives both the
-model output and robot safety context. Hard safety constraints override confidence.
+model output and robot safety context. Hard safety constraints override confidence. Version 0.2
+also keeps scenario generation separate from evaluation, allowing every threshold to be tested on
+exactly the same predictions and obstacle conditions.
 
 ## Decision policy
 
@@ -28,4 +30,5 @@ model output and robot safety context. Hard safety constraints override confiden
 - The synthetic experiment validates software logic, not clinical safety.
 - The first EEG model is subject-specific and uses public offline data.
 - Cross-subject generalization, calibrated uncertainty, ROS2, Gazebo, and hardware are later milestones.
+- The lightweight differential-drive simulator validates command integration, not full robot dynamics.
 

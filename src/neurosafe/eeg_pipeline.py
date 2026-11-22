@@ -9,6 +9,8 @@ class EEGResult:
     subject: int
     trials: int
     balanced_accuracy: float
+    expected_calibration_error: float
+    brier_score: float
     output_model: str
 
 
@@ -23,8 +25,9 @@ def train_subject_model(subject: int, output_model: str | Path) -> EEGResult:
         import mne
         from mne.datasets import eegbci
         from mne.decoding import CSP
+        from sklearn.calibration import CalibratedClassifierCV
         from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-        from sklearn.metrics import balanced_accuracy_score
+        from sklearn.metrics import balanced_accuracy_score, brier_score_loss
         from sklearn.model_selection import StratifiedKFold, cross_val_predict
         from sklearn.pipeline import Pipeline
     except ImportError as exc:
@@ -53,15 +56,27 @@ def train_subject_model(subject: int, output_model: str | Path) -> EEGResult:
     )
     x = epochs.get_data(copy=True)
     y = epochs.events[:, -1]
-    pipeline = Pipeline(
+    base_pipeline = Pipeline(
         [
             ("csp", CSP(n_components=6, reg="ledoit_wolf", log=True, norm_trace=False)),
             ("lda", LinearDiscriminantAnalysis(solver="lsqr", shrinkage="auto")),
         ]
     )
+    pipeline = CalibratedClassifierCV(base_pipeline, method="sigmoid", cv=3)
     folds = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     predictions = cross_val_predict(pipeline, x, y, cv=folds)
+    probabilities = cross_val_predict(pipeline, x, y, cv=folds, method="predict_proba")
     score = balanced_accuracy_score(y, predictions)
+    class_order = sorted(set(y))
+    positive_class = class_order[-1]
+    positive_index = class_order.index(positive_class)
+    binary_truth = (y == positive_class).astype(int)
+    brier = brier_score_loss(binary_truth, probabilities[:, positive_index])
+    from .metrics import expected_calibration_error
+
+    confidence = probabilities.max(axis=1).tolist()
+    correctness = (predictions == y).tolist()
+    calibration_error = expected_calibration_error(confidence, correctness)
     pipeline.fit(x, y)
 
     model_path = Path(output_model)
@@ -75,7 +90,17 @@ def train_subject_model(subject: int, output_model: str | Path) -> EEGResult:
             "band_hz": [7.0, 30.0],
             "epoch_seconds": [1.0, 4.0],
             "balanced_accuracy_cv": score,
+            "expected_calibration_error_cv": calibration_error,
+            "brier_score_cv": brier,
+            "evaluation_note": "Nested calibrated subject-specific cross-validation",
         },
         model_path,
     )
-    return EEGResult(subject, len(y), float(score), str(model_path))
+    return EEGResult(
+        subject,
+        len(y),
+        float(score),
+        float(calibration_error),
+        float(brier),
+        str(model_path),
+    )

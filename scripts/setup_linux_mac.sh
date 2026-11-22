@@ -6,6 +6,8 @@ python3 -m venv .venv
 .venv/bin/pip install -e '.[dev,dashboard]'
 .venv/bin/pytest -q
 .venv/bin/neurosafe simulate --trials 1000 --seed 42
+.venv/bin/neurosafe sweep --trials 1000 --seed 42
+.venv/bin/neurosafe robot-demo
 
 echo "Setup complete. Start the dashboard with:"
 echo ".venv/bin/streamlit run app/dashboard.py"

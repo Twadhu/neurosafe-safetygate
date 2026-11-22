@@ -1,0 +1,9 @@
+[run]
+omit =
+    src/neurosafe/cli.py
+    src/neurosafe/eeg_pipeline.py
+
+[report]
+show_missing = true
+skip_covered = true
+

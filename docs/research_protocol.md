@@ -20,6 +20,8 @@ Run the same predictions and obstacle conditions under:
 - Response latency.
 - Balanced accuracy for the EEG classifier.
 - Expected calibration error and Brier score in the calibration milestone.
+- Coverage, selective accuracy, and false-rejection rate.
+- Weighted risk, reported together with unweighted unsafe-command rate.
 
 ## Reproducibility rules
 
@@ -28,6 +30,8 @@ Run the same predictions and obstacle conditions under:
 - Report subject-specific and cross-subject results separately.
 - Save raw results before creating plots or summaries.
 - Label synthetic, offline EEG, simulation, and physical-robot results distinctly.
+- Evaluate threshold candidates on identical scenarios and seeds.
+- Select thresholds using validation data and report final results on untouched test data.
 
 ## Safety and ethics
 

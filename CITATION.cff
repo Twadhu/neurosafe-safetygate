@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this research prototype, please cite it as follows."
+title: "NeuroSafe SafetyGate"
+type: software
+version: 0.2.0
+authors:
+  - family-names: "Abbas"
+    given-names: "Abdullah Faisal Abdo Othman"
+repository-code: "https://github.com/Twadhu/neurosafe-safetygate"
+

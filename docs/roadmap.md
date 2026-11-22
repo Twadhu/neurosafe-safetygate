@@ -2,17 +2,20 @@
 
 ## Milestone 1: Core SafetyGate
 
-- Status: implemented in version 0.1.
+- Status: implemented and expanded in version 0.2.
 - Deterministic three-state decision logic.
 - Hard checks for obstacles, timeout, invalid probabilities, communication, and emergency stop.
 - Automated tests and synthetic comparison experiment.
+- Calibration, selective prediction, risk-coverage, and threshold-sweep metrics.
+- Lightweight 2D differential-drive command simulator.
 
 ## Milestone 2: Public EEG baseline
 
 - Install EEG dependencies.
 - Download PhysioNet EEG Motor Movement/Imagery runs 6, 10, and 14.
 - Train and evaluate CSP + LDA for imagined left versus right fist.
-- Add probability calibration and calibration metrics.
+- Run and archive the calibrated CSP + LDA baseline on public data.
+- Add subject-disjoint evaluation after the single-subject baseline is verified.
 
 ## Milestone 3: Robot simulation
 

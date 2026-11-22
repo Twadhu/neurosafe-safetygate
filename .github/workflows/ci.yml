@@ -15,5 +15,5 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev]"
       - run: ruff check .
-      - run: pytest -q
+      - run: pytest --cov=neurosafe --cov-report=term-missing --cov-fail-under=85
 
