@@ -3,6 +3,7 @@ message: "If you use this research prototype, please cite it as follows."
 title: "NeuroSafe SafetyGate"
 type: software
 version: 1.0.0
+license: MIT
 authors:
   - family-names: "Abbas"
     given-names: "Abdullah Faisal Abdo Othman"
