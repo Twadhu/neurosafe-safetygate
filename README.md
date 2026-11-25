@@ -125,6 +125,10 @@ This software is an educational research prototype. It is not a medical device a
 be used to control equipment around people without independent safety engineering, formal
 risk assessment, institutional approval, and supervised testing.
 
+## License
+
+This project is licensed under the [MIT License](LICENSE). You may use, copy, modify, and distribute the software under the terms of that license. The software is provided without warranty. See the [LICENSE](LICENSE) file for the full terms.
+
 ## Current scientific boundary
 
 The committed real-EEG result is a 10-participant pilot, not a final estimate across all 109
